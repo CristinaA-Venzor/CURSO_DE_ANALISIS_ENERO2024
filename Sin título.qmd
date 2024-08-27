@@ -1,0 +1,173 @@
+---
+title: "Guía práctica de análisis criminal"
+format:
+  html:
+    smooth-scroll: true
+    css: styles.css
+    self-contained: true
+    embed-resources: true
+editor: visual
+toc: true
+toc-title: "Tabla de contenidos"
+theme: minty
+title-block-banner: true
+toc-depth: 2
+toc-expand: 2
+---
+
+# Introducción
+
+Bienvenidos al Curso de Análisis Criminal, una experiencia educativa diseñada para capacitar a profesionales en la creación de productos que sirvan como evidencia para la toma decisiones en temas de seguridad. Este curso combina fundamentos teóricos con aplicaciones prácticas para abordar los retos específicos que enfrenta México en materia de seguridad pública y prevención del delito.
+
+En los últimos años, el análisis criminal ha emergido como una herramienta crucial para entender y combatir la delincuencia. La capacidad de analizar grandes volúmenes de datos y extraer información significativa permite a las autoridades tomar decisiones informadas y diseñar estrategias más efectivas. En este curso, aprenderemos a utilizar R, un lenguaje de programación y entorno de software libre ampliamente utilizado en la estadística y el análisis de datos, para desarrollar análisis avanzados y visualizaciones que aporten valor a las iniciativas de seguridad en México.
+
+# Módulo 1: Instalación de programas
+
+## Paso 1: instalar R
+
+El primer paso es descargar e instalar R, un lenguaje de programación diseñado para analizar y visualizar datos, incluida la elaboración de mapas. Para instalar R, visite el sitio web de R y descargue R para Windows o Mac, según el tipo de ordenador que utilice. Si ya tiene R instalado en su ordenador, actualícelo a la última versión.
+
+## Paso 2: instalar RStudio
+
+El siguiente paso es descargar RStudio, una aplicación que puedes utilizar para trabajar con el lenguaje de programación R de forma más eficiente. Descarga RStudio Desktop para tu ordenador desde el sitio web de Posit (que es la empresa que fabrica RStudio) e instálalo. Si ya tienes RStudio Desktop instalado en tu máquina, actualízalo a la última versión.
+
+Implementar una política de gestión, validación y limpieza de datos es esencial para cualquier proyecto de análisis criminal, ya que garantiza la integridad y la utilidad de los datos utilizados, permitiendo desarrollar productos analíticos de alta calidad y relevancia para la toma de decisiones en seguridad pública.
+
+## Paso 3: instalar pauqterías necesarias
+
+```{r}
+library(readr) # Para importar de distintos formatos con delimitadores
+library(tidyverse) # Metapaquete para Manipular datos (magrittr, dplyr, ggplot2, tidyr, purrr)
+library(datasets) # Contiene Dataset "iris"
+library(ggplot2) #Para graficar
+library(janitor)
+
+```
+
+# Módulo 2: Política de gestión, validación y limpieza de datos
+
+En el contexto del análisis criminal, una Política de gestión, validación y limpieza de datos es un conjunto de directrices y procedimientos establecidos para asegurar que los datos utilizados en el análisis sean precisos, consistentes, completos y confiables. Estas políticas son esenciales para garantizar la calidad de los datos, lo cual es fundamental para producir análisis válidos y útiles.
+
+## 2.1. Análisis Exploratoio de Datos (EDA)
+
+-   El objetivo de la clase es equipar a los estudiantes con las habilidades necesarias para crear y gestionar información detallada sobre los datos que utilizan en sus análisis.
+
+-   Los estudiantes aprenderán a desarrollar metadatos efectivos que describan la fuente de datos, su estructura, su calidad y otros atributos relevantes.
+
+-   Esta documentación no solo facilitará la comprensión y colaboración en proyectos de análisis, sino que también garantizará la trazabilidad y la reproducibilidad de los análisis, lo que es esencial en la toma de decisiones basada en datos y el cumplimiento de estándares regulatorios.
+
+-   Al finalizar la clase, los analistas estarán mejor preparados para gestionar y comunicar de manera efectiva la información sobre los datos utilizados en sus investigaciones y proyectos.
+
+## 2.2. Automatización de EDA
+
+### 2.2.1. Cargar base de datos
+
+```{r}
+df_base<-read.csv("https://raw.githubusercontent.com/CristinaA-Venzor/CURSO_BASE_ANALISIS_CRIMINAL/main/Bases%20de%20datos/carpetas_2023.csv")
+
+```
+
+### 2.2.2. Paquete SmartEDA
+
+```{r}
+
+# Ejecutamos la creación de meta datos (informacion basica por variable)
+tabla_final<-SmartEDA::ExpData(df_base,type=2)
+
+# Cambio lo valores de las gráficas
+colnames(tabla_final)<-c("No.",
+                         "Nombre de variable", 
+                         "Tipo de datos", 
+                         "Número de registros", 
+                         "Valores faltantes", 
+                         "Porcentaje de valores faltantes", 
+                         "Número de valores distintos")
+
+```
+
+### 2.2.3. Despliego resultado
+
+```{r}
+# Doy formato a la tabla y la genero en mi viewer
+tabla_final<-flextable::flextable(tabla_final)
+
+#Mandamos llamar la tabla
+tabla_final
+```
+
+### 2.2.4. Interpretación y apliación de resultado
+
+# Módulo 3: Técnica de limpieza de datos
+
+## 3.1. Formato fecha
+
+```{r}
+# Desde archivos separados por delimitador mediante un link (CSV)
+delitos <- read.csv("https://raw.githubusercontent.com/CristinaA-Venzor/CURSO_BASE_ANALISIS_CRIMINAL/main/Bases%20de%20datos/carpetas_2023.csv")
+
+delitos <- subset.data.frame(delitos, delito == "ROBO DE OBJETOS") # Separo el delito a estudia
+
+delitos <- delitos %>% clean_names() # Limpieza automática de nombre de variables
+
+#pongo en formato fecha
+delitos$fecha_hechos <- as.Date(delitos$fecha_hechos, "%d/%m/%y")
+
+#extraigo día
+delitos$dia <- format(delitos$fecha_hechos,"%u")
+#extraigo año
+delitos$año <- format(delitos$fecha_hechos,"%Y")
+#extraigo mes
+delitos$mes <- format(delitos$fecha_hechos,"%m")
+
+# GRAFICO DE FRECUENCIA EN HORARIO ----------------------------------------
+
+delitos <- delitos %>%
+  mutate(hora_hechos = as.POSIXct(hora_hechos, format = "%H:%M:%S")) # Configuro el formato de hora de los hechos
+
+delitos <- delitos %>% mutate(hora = format(hora_hechos, format = "%H")) # Me quedo solo con la hora de los hechos
+
+delitos$hora <- as.numeric(delitos$hora) # Cambia la hora solita a datos de tipo numerico
+```
+
+# Módulo 4: Productos de estadística descriptiva
+
+## 4.1. Visualización de datos
+
+```{r}
+
+
+#tabla de doble entrada
+table <- xtabs(~ hora+dia, data=delitos)
+
+#convierto a matriz
+table <- as.matrix(table)
+
+# pongo días a nombre completo
+colnames(table) <-  c("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
+##Revisar si en nuestra tabla están todos los días, si no lo están borrar los que se omiten.
+
+df_mapa <- as.data.frame(table) # Genero el frame a partir del filtrado previo
+
+# Codigo para el gráfico
+ggp <- ggplot(df_mapa, aes(dia, hora)) + # ggplot(data_frame, aes(eje_x, eje_y))
+  geom_tile(aes(fill = Freq)) + # Señalizacion del color
+  ggtitle("Frecuencia temporal de Robo de objetos") + # Titulo
+  theme(plot.title = element_text(hjust = 0.5, face = "bold")) # Tipo de grafico
+ggp + scale_fill_gradient(low = "white", high = "red") # Configuracion de los colores  
+```
+
+# Módulo 5: Fundamentos de cartografía
+
+jhbjhvj
+
+
+```{r}
+
+```
+
+
+# Módulo 6: Concentración geográfica
+
+# Módulo 7: Automatización de reportes
+
+# Conclusion
